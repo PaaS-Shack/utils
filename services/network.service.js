@@ -5,6 +5,8 @@ const { MoleculerClientError } = require("moleculer").Errors;
 
 const exec = require('child_process').exec;
 
+const whoiser = require('whoiser');
+
 /**
  * network related utilities service
  * Includes MTR scan and other network related utilities
@@ -239,35 +241,57 @@ module.exports = {
         },
 
         /**
-         * DNS resolver
+         * domain whois lookup
          * 
-         * @actions
-         * @param {String} host - Hostname or IP address to scan
-         * @param {String} type - DNS record type to scan
+         * @param {String} domain - Domain name to lookup
          * 
-         * @returns {Object} DNS results
+         * @returns {Object} Whois lookup results
          */
-        dns: {
+        whois: {
             rest: {
                 method: "GET",
-                path: "/dns/:host"
+                path: "/whois/:domain"
             },
             params: {
-                host: { type: "string" },
-                type: {
-                    type: "enum",
-                    values: [
-                        "A", "AAAA", "CNAME", "MX", "NS", "PTR", "SOA", "SRV", "TXT"
-                    ],
-                    optional: true,
-                    default: "A"
-                }
+                domain: { type: "string" }
             },
             async handler(ctx) {
-                const { host, type } = ctx.params;
+                const { domain } = ctx.params;
 
+                const result = await whoiser(domain);
+
+                const parsed = {};
+
+                const providerKeys = Object.keys(result);
+                const providerKey = providerKeys[0];
+
+                const provider = result[providerKey];
+
+                const keys = Object.keys(provider);
+                keys.forEach(key => {
+                    const providerValue = provider[key];
+
+                    if (providerValue === null || providerValue === undefined || providerValue === '') {
+                        return;
+                    }
+                    if (key[0] === '>' || key === 'raw' || key === 'text') {
+                        return;
+                    }
+                    
+                    const normalizedKey = key.toLowerCase().split(' ').join('_');
+
+                    if (normalizedKey == 'domain_status') {
+                        parsed[normalizedKey] = providerValue.map(status => {
+                            return status.split(' ').shift();
+                        });
+                    } else {
+                        parsed[normalizedKey] = providerValue;
+                    }
+                });
+
+                return parsed;
             }
-        }
+        },
     },
 
     /**

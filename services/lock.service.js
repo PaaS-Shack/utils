@@ -190,13 +190,14 @@ module.exports = {
         async check() {
             const now = Date.now();
             for (let [key, locked] of this.locked) {
+                if(locked.length == 0) {
+                    this.locked.delete(key);
+                    continue;
+                }
                 const lock = locked[0];
                 if (lock && lock.timeout < now) {
                     this.logger.error(`Lock timeout for ${key}`)
                     locked.shift();
-                    if(locked.length == 0) {
-                        this.locked.delete(key);
-                    }
                     lock.reject(new Error('Lock timeout'));
                 }
             }

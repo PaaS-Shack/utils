@@ -190,14 +190,11 @@ module.exports = {
         async check() {
             const now = Date.now();
             for (let [key, locked] of this.locked) {
-                
-                const lock = locked[0];
-                if (lock && lock.timeout < now) {
-                    this.logger.error(`Lock timeout for ${key}`)
-                    locked.shift();
-                    lock.reject(new Error('Lock timeout'));
-                    if (locked.length == 0) {
-                        this.locked.delete(key);
+                // check for expired locks
+                while (locked.length > 0 && locked[0].timeout < now) {
+                    const lock = locked.shift();
+                    if (lock) {
+                        lock.reject(new MoleculerRetryableError("Lock timeout"));
                     }
                 }
             }

@@ -191,7 +191,6 @@ module.exports = {
             const now = Date.now();
             for (let [key, locked] of this.locked) {
                 const lock = locked[0];
-                console.log(locked)
                 if (lock && lock.timeout < now) {
                     this.logger.error(`Lock timeout for ${key}`)
                     locked.shift();

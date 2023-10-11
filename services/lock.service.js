@@ -150,7 +150,10 @@ module.exports = {
                 locked = [];
                 this.locked.set(key, locked);
                 return Promise.resolve();
-            } else {
+            } else if(locked.length == 0){
+                this.locked.delete(key);
+                return Promise.resolve();
+            }else {
                 // ttl for lock timeout
                 const timeout = Date.now() + ttl;
 

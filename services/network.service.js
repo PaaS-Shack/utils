@@ -314,7 +314,14 @@ module.exports = {
             async handler(ctx) {
                 const { as } = ctx.params;
 
-                const result = await whoiser.asn(as);
+                let result = await whoiser.asn(as);
+
+                if (!result.asn || result.asn == '') {
+                    result = await whoiser.asn(as, {
+                        host: 'riswhois.ripe.net'
+                    })
+                }
+
                 return result;
             }
         },

@@ -194,7 +194,7 @@ module.exports = {
                 while (locked.length > 0 && locked[0].timeout < now) {
                     const lock = locked.shift();
                     if (lock) {
-                        lock.reject(new MoleculerRetryableError("Lock timeout"));
+                        lock.reject(new MoleculerRetryableError("Lock timeout", 423, "LOCK_TIMEOUT"));
                     }
                 }
             }

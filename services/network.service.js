@@ -134,15 +134,15 @@ module.exports = {
                         //--- 1.1.1.1 ping statistics ---
                         //4 packets transmitted, 4 received, 0% packet loss, time 3004ms
                         //rtt min/avg/max/mdev = 19.158/124.330/300.607/114.630 ms
-                        const pingStats = {};
+                        const pingStats = { avr: 0 };
                         const regex = /(\d+) packets transmitted, (\d+) received, (\d+)% packet loss, time (\d+)ms/;
                         const matches = stdout.match(regex);
                         if (matches) {
                             const [_, transmitted, received, loss, time] = matches;
-                            pingStats.transmitted = transmitted;
-                            pingStats.received = received;
-                            pingStats.loss = loss;
-                            pingStats.time = time;
+                            pingStats.transmitted = Number(transmitted);
+                            pingStats.received = Number(received);
+                            pingStats.loss = Number(loss);
+                            pingStats.time = Number(time);
                         }
 
                         // parse ping results
@@ -154,15 +154,18 @@ module.exports = {
                             const matches = result.match(regex);
                             if (matches) {
                                 const [_, bytes, ip, seq, ttl, time] = matches;
+                                pingStats.avr += Number(time);
                                 pingResults.push({
-                                    bytes: bytes,
+                                    bytes: Number(bytes),
                                     ip: ip,
-                                    seq: seq,
-                                    ttl: ttl,
-                                    time: time
+                                    seq: Number(seq),
+                                    ttl: Number(ttl),
+                                    time: Number(time)
                                 });
                             }
                         });
+
+                        pingStats.avr = Number((pingStats.avr / pingResults.length).toFixed(3));
 
                         resolve({
                             statistics: pingStats,
@@ -277,7 +280,7 @@ module.exports = {
                     if (key[0] === '>' || key === 'raw' || key === 'text') {
                         return;
                     }
-                    
+
                     const normalizedKey = key.toLowerCase().split(' ').join('_');
 
                     if (normalizedKey == 'domain_status') {
@@ -292,6 +295,53 @@ module.exports = {
                 return parsed;
             }
         },
+
+        /**
+         * as whois lookup
+         * 
+         * @param {String} as - AS number to lookup
+         * 
+         * @returns {Object} Whois lookup results
+         */
+        as: {
+            rest: {
+                method: "GET",
+                path: "/as/:as"
+            },
+            params: {
+                as: { type: "string" }
+            },
+            async handler(ctx) {
+                const { as } = ctx.params;
+
+                const result = await whoiser.asn(as);
+                return result;
+            }
+        },
+
+        /**
+         * ip whois lookup
+         * 
+         * @param {String} ip
+         * 
+         * @returns {Object} Whois lookup results
+         */
+        ip: {
+            rest: {
+                method: "GET",
+                path: "/as/:as"
+            },
+            params: {
+                ip: { type: "string" }
+            },
+            async handler(ctx) {
+                const { ip } = ctx.params;
+
+                const result = await whoiser.ip(ip);
+                return result;
+            }
+        },
+
     },
 
     /**

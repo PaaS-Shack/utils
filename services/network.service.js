@@ -29,7 +29,7 @@ module.exports = {
      */
     mixins: [
         ConfigLoader([
-            'mtr.**'
+            'utils.network.**'
         ]),
     ],
 
@@ -60,7 +60,7 @@ module.exports = {
          * MTR scan 
          * 
          * @actions
-         * @param {String} host - Hostname or IP address to scan
+         * @param {String} ip - Hostname or IP address to scan
          * @param {Number} count - Number of pings to send
          * 
          * @returns {Object} MTR scan results
@@ -68,17 +68,17 @@ module.exports = {
         mtr: {
             rest: {
                 method: "GET",
-                path: "/mtr/:host"
+                path: "/mtr/:ip"
             },
             params: {
-                host: { type: "string" },
+                ip: { type: "string" },
                 count: { type: "number", optional: true, default: 10 }
             },
             async handler(ctx) {
-                const { host, count } = ctx.params;
+                const { ip, count } = ctx.params;
 
                 return new Promise((resolve, reject) => {
-                    exec(`mtr -z -b -w -n -j -c ${count} ${host}`, (error, stdout, stderr) => {
+                    exec(`mtr -z -b -w -j -c ${count} ${ip}`, (error, stdout, stderr) => {
                         if (error) {
                             reject(error);
                         }
@@ -102,7 +102,7 @@ module.exports = {
          * Ping scan
          * 
          * @actions
-         * @param {String} host - Hostname or IP address to scan
+         * @param {String} ip - Hostname or IP address to scan
          * @param {Number} count - Number of pings to send
          * 
          * @returns {Object} Ping scan results
@@ -110,17 +110,17 @@ module.exports = {
         ping: {
             rest: {
                 method: "GET",
-                path: "/ping/:host"
+                path: "/ping/:ip"
             },
             params: {
-                host: { type: "string" },
+                ip: { type: "string" },
                 count: { type: "number", optional: true, default: 10 }
             },
             async handler(ctx) {
-                const { host, count } = ctx.params;
+                const { ip, count } = ctx.params;
 
                 return new Promise((resolve, reject) => {
-                    exec(`ping -c ${count} ${host}`, (error, stdout, stderr) => {
+                    exec(`ping -c ${count} ${ip}`, (error, stdout, stderr) => {
                         if (error) {
                             reject(error);
                         }
@@ -191,14 +191,14 @@ module.exports = {
                 path: "/traceroute/:host"
             },
             params: {
-                host: { type: "string" },
+                ip: { type: "string" },
                 count: { type: "number", optional: true, default: 10 }
             },
             async handler(ctx) {
-                const { host, count } = ctx.params;
+                const { ip, count } = ctx.params;
 
                 return new Promise((resolve, reject) => {
-                    exec(`traceroute -w ${count} ${host}`, (error, stdout, stderr) => {
+                    exec(`traceroute -w ${count} ${ip}`, (error, stdout, stderr) => {
                         if (error) {
                             reject(error);
                         }
@@ -247,6 +247,8 @@ module.exports = {
          * domain whois lookup
          * 
          * @param {String} domain - Domain name to lookup
+         * @param {String} host - Whois server to use
+         * @param {Number} timeout - Whois server timeout
          * 
          * @returns {Object} Whois lookup results
          */
@@ -256,43 +258,23 @@ module.exports = {
                 path: "/whois/:domain"
             },
             params: {
-                domain: { type: "string" }
+                domain: { type: "string" },
+                host: {
+                    type: "string",
+                    optional: true,
+                },
+                timeout: {
+                    type: "number",
+                    optional: true,
+                    default: 10000
+                }
             },
             async handler(ctx) {
-                const { domain } = ctx.params;
+                const { domain, host, timeout } = ctx.params;
 
-                const result = await whoiser(domain);
-
-                const parsed = {};
-
-                const providerKeys = Object.keys(result);
-                const providerKey = providerKeys[0];
-
-                const provider = result[providerKey];
-
-                const keys = Object.keys(provider);
-                keys.forEach(key => {
-                    const providerValue = provider[key];
-
-                    if (providerValue === null || providerValue === undefined || providerValue === '') {
-                        return;
-                    }
-                    if (key[0] === '>' || key === 'raw' || key === 'text') {
-                        return;
-                    }
-
-                    const normalizedKey = key.toLowerCase().split(' ').join('_');
-
-                    if (normalizedKey == 'domain_status') {
-                        parsed[normalizedKey] = providerValue.map(status => {
-                            return status.split(' ').shift();
-                        });
-                    } else {
-                        parsed[normalizedKey] = providerValue;
-                    }
+                return whoiser(domain, {
+                    host, timeout
                 });
-
-                return parsed;
             }
         },
 
@@ -300,36 +282,45 @@ module.exports = {
          * as whois lookup
          * 
          * @param {String} as - AS number to lookup
+         * @param {String} host - Whois server to use
+         * @param {Number} timeout - Whois server timeout
+         * 
          * 
          * @returns {Object} Whois lookup results
          */
-        as: {
+        asn: {
             rest: {
                 method: "GET",
                 path: "/as/:as"
             },
             params: {
-                as: { type: "string" }
+                asn: { type: "string" },
+                host: {
+                    type: "string",
+                    optional: true
+                },
+                timeout: {
+                    type: "number",
+                    optional: true,
+                    default: 10000
+                }
             },
             async handler(ctx) {
-                const { as } = ctx.params;
+                const { asn, host, timeout } = ctx.params;
 
-                let result = await whoiser.asn(as);
-
-                if (!result.asn || result.asn == '') {
-                    result = await whoiser.asn(as, {
-                        host: 'riswhois.ripe.net'
-                    })
-                }
-
-                return result;
+                return whoiser.asn(asn, {
+                    host, timeout
+                });
             }
         },
 
         /**
          * ip whois lookup
          * 
-         * @param {String} ip
+         * @param {String} ip - IP address to lookup
+         * @param {String} host - Whois server to use
+         * @param {Number} timeout - Whois server timeout
+         * @param {Boolean} raw - Return raw whois results
          * 
          * @returns {Object} Whois lookup results
          */
@@ -339,16 +330,104 @@ module.exports = {
                 path: "/as/:as"
             },
             params: {
-                ip: { type: "string" }
+                ip: { type: "string" },
+                host: {
+                    type: "string",
+                    optional: true
+                },
+                timeout: {
+                    type: "number",
+                    optional: true,
+                    default: 10000
+                },
+                raw: {
+                    type: "boolean",
+                    optional: true,
+                    default: false
+                }
             },
             async handler(ctx) {
-                const { ip } = ctx.params;
+                const { ip, host, timeout, raw } = ctx.params;
 
-                const result = await whoiser.ip(ip);
-                return result;
+                return whoiser.ip(ip, {
+                    host, timeout, raw
+                });
             }
         },
 
+        /**
+         * convert route to range
+         * 
+         * @param {String} route - CIDR route
+         * 
+         * @returns {Object} Range
+         */
+        routeToRange: {
+            rest: {
+                method: "GET",
+                path: "/routeToRange/:route"
+            },
+            params: {
+                route: { type: "string" }
+            },
+            async handler(ctx) {
+                const { route } = ctx.params;
+                return this.ipRange(route);
+            }
+        },
+
+        /**
+         * allTlds
+         * 
+         * @returns {Object} list of all TLDs
+         */
+        allTlds: {
+            rest: {
+                method: "GET",
+                path: "/allTlds"
+            },
+            async handler(ctx) {
+                return whoiser.allTlds();
+            }
+        },
+
+        /**
+         * whois list
+         * 
+         * @returns {Array} Whois list
+         */
+        lists: {
+            rest: {
+                method: "GET",
+                path: "/lists"
+            },
+            async handler(ctx) {
+                return {
+                    ip: {
+                        arin: {
+                            ipv4: 'whois.arin.net',
+                            ipv6: 'whois.arin.net'
+                        },
+                        ripe: {
+                            ipv4: 'whois.ripe.net',
+                            ipv6: 'whois.ripe.net'
+                        },
+                        apnic: {
+                            ipv4: 'whois.apnic.net',
+                            ipv6: 'whois.apnic.net'
+                        },
+                        lacnic: {
+                            ipv4: 'whois.lacnic.net',
+                            ipv6: 'whois.lacnic.net'
+                        },
+                        afrinic: {
+                            ipv4: 'whois.afrinic.net',
+                            ipv6: 'whois.afrinic.net'
+                        },
+                    },
+                }
+            }
+        },
     },
 
     /**
@@ -362,7 +441,26 @@ module.exports = {
      * service methods
      */
     methods: {
+        ipRange(CIDR) {
 
+            //Beginning IP address
+            var beg = CIDR.substr(CIDR, CIDR.indexOf('/'));
+            var end = beg;
+            var off = (1 << (32 - parseInt(CIDR.substr(CIDR.indexOf('/') + 1)))) - 1;
+            var sub = beg.split('.').map(function (a) { return parseInt(a) });
+
+            //An IPv4 address is just an UInt32...
+            var buf = new ArrayBuffer(4); //4 octets 
+            var i32 = new Uint32Array(buf);
+
+            //Get the UInt32, and add the bit difference
+            i32[0] = (sub[0] << 24) + (sub[1] << 16) + (sub[2] << 8) + (sub[3]) + off;
+
+            //Recombine into an IPv4 string:
+            var end = Array.apply([], new Uint8Array(buf)).reverse().join('.');
+
+            return [beg, end];
+        },
     },
 
     created() { },

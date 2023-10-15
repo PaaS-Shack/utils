@@ -150,7 +150,7 @@ module.exports = {
 
                         const pingResults = [];
                         results.forEach(result => {
-                            const regex = /(\d+) bytes from (\d+\.\d+\.\d+\.\d+): icmp_seq=(\d+) ttl=(\d+) time=(\d+\.\d+) ms/;
+                            const regex = /(\d+) bytes from (\d+\.\d+\.\d+\.\d+): icmp_seq=(\d+) ttl=(\d+) time=(\d+) ms/;
                             const matches = result.match(regex);
                             if (matches) {
                                 const [_, bytes, ip, seq, ttl, time] = matches;

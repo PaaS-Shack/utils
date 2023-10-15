@@ -151,7 +151,7 @@ module.exports = {
                         const pingResults = [];
                         results.forEach(result => {
                             const regex = /(\d+) bytes from (\d+\.\d+\.\d+\.\d+): icmp_seq=(\d+) ttl=(\d+) time=(\d+) ms/;
-                            const matches = result.match(regex);
+                            const matches = result.match(regex) || result.match(/(\d+) bytes from (\d+\.\d+\.\d+\.\d+): icmp_seq=(\d+) ttl=(\d+) time=(\d+\.\d+) ms/);
                             if (matches) {
                                 const [_, bytes, ip, seq, ttl, time] = matches;
                                 pingStats.avr += Number(time);

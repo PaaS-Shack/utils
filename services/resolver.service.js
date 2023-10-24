@@ -294,7 +294,7 @@ module.exports = {
             const resolver = this.providers.get(provider);
             // lookup DNS record
             const result = await resolver.resolve(host, type);
-            // return result
+            // return result)
             return result;
         },
 
@@ -317,6 +317,7 @@ module.exports = {
             }
             const results = await Promise.allSettled(promises)
 
+            console.log(results)
             let index = 0;
             for (let provider of providers) {
                 // add dns record to list

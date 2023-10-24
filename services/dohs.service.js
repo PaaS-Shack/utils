@@ -1,7 +1,5 @@
 
 
-const Lock = require('../lib/lock')
-
 
 const DbService = require("db-mixin");
 const Cron = require("cron-mixin");
@@ -270,7 +268,7 @@ module.exports = {
                     return results
                 }
 
-                await this.lock.acquire(key);
+                await ctx.call('v1.utils.lock.aquire', { key: key, ttl: 1000 * 60 * 5 });
 
                 const results = await this.findEntities(ctx, {
                     query: {
@@ -281,7 +279,7 @@ module.exports = {
                 });
                 if (results.length > 0) {
 
-                    this.lock.release(key)
+                   await ctx.call('v1.utils.lock.release', { key: key });
                     this.log(nodeID, key, start, true, results);
 
                     return this.mapRecords(results);
@@ -301,7 +299,7 @@ module.exports = {
                     }, { parentCtx: ctx }));
                 }
 
-                this.lock.release(key);
+                await ctx.call('v1.utils.lock.release', { key: key });
 
                 this.log(nodeID, key, start, false, results)
 
@@ -472,7 +470,6 @@ module.exports = {
      */
     created() {
 
-        this.lock = new Lock();
     },
 
     /**

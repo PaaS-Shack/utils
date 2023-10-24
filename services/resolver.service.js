@@ -309,16 +309,24 @@ module.exports = {
         async propagate(host, type = "A") {
             // create dns records
             const records = [];
+            const promises = []
             // loop through providers
             for (let provider of providers) {
-                // lookup dns record
-                const result = await this.lookup(host, type, provider.name);
+                // add dns record to list
+                promises.push(this.lookup(host, type, provider.name))
+            }
+            const results = await Promise.allSettled(promises)
+
+            let index = 0;
+            for (let provider of providers) {
                 // add dns record to list
                 records.push({
                     provider: provider.name,
-                    record: result
+                    result: results[index++]
                 });
             }
+
+
             // return dns records
             return records;
         }

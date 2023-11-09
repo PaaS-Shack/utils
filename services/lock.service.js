@@ -122,7 +122,20 @@ module.exports = {
             async handler(ctx) {
                 return this.waiting(ctx.params.key);
             }
-        }
+        },
+
+        /**
+         * list all locks
+         * 
+         * @actions
+         * 
+         * @returns {Promise} Promise of lock
+         */
+        list: {
+            async handler(ctx) {
+                return Array.from(this.locked.keys());
+            }
+        },
     },
 
     /**

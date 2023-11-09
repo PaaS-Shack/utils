@@ -21,8 +21,7 @@ module.exports = {
     mixins: [
         DbService({
             Permissions: 'utils.dohs',
-        }),
-        Cron
+        })
     ],
 
     /**
@@ -176,9 +175,17 @@ module.exports = {
 
         // default init config settings
         config: {
-            
+
         },
 
+        cron: [
+            {
+                name: "ClearExpiredRecords",
+                schedule: "* * * * *",
+                action: "v1.utils.dohs.clearExpired",
+                params: {}
+            }
+        ],
 
         providers: {
             'google': {
@@ -199,16 +206,6 @@ module.exports = {
         }
     },
 
-
-    crons: [
-        {
-            name: "ClearExpiredRecords",
-            cronTime: "* * * * *",
-            onTick: {
-                action: "v1.utils.dohs.clearExpired"
-            }
-        }
-    ],
     /**
      * Actions
      */
@@ -279,7 +276,7 @@ module.exports = {
                 });
                 if (results.length > 0) {
 
-                   await ctx.call('v1.utils.lock.release', { key: key });
+                    await ctx.call('v1.utils.lock.release', { key: key });
                     this.log(nodeID, key, start, true, results);
 
                     return this.mapRecords(results);

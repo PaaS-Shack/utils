@@ -252,6 +252,8 @@ module.exports = {
                         params: params.params,
                         nextRun: nextRun,
                     });
+
+                    this.logger.info(`Cron job created: ${params.name}`);
                 }
 
                 // release lock

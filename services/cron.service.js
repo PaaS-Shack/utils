@@ -236,11 +236,9 @@ module.exports = {
                 });
 
                 // check if cron job exists
-                let cronJob = await this.findEntity(null, {
-                    query: {
-                        name: params.name
-                    }
-                });
+                let cronJob = await this.actions.getByName({
+                    name: params.name
+                })
 
                 // if cron job does not exist, create it
                 if (!cronJob) {
@@ -333,7 +331,7 @@ module.exports = {
             async handler(ctx) {
                 // get all cron jobs
                 let cronJobs = await this.findEntities(null, {
-                    
+
                 });
 
                 const promises = [];

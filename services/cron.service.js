@@ -401,7 +401,7 @@ module.exports = {
             }
 
             if (this.needsSetup) {
-                await this.processServiceCronConfigs(ctx);
+               // await this.processServiceCronConfigs(ctx);
                 this.needsSetup = false;
             }
         },

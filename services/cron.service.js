@@ -295,13 +295,6 @@ module.exports = {
                     }
                 });
 
-                // if cron job does not exist, throw error
-                if (!cronJob) {
-                    throw new MoleculerClientError("Cron job not found", 400, "CRON_JOB_NOT_FOUND", {
-                        name: name
-                    });
-                }
-
                 // return cron job
                 return cronJob;
             }

@@ -501,7 +501,7 @@ module.exports = {
                 await this.intervalTimer();
             }, 10000);
 
-            await this.processServiceCronConfigs(this.broker)
+            //await this.processServiceCronConfigs(this.broker)
         },
 
         /**

@@ -267,28 +267,6 @@ module.exports = {
         },
 
         /**
-         * test action
-         */
-        testAction: {
-            async handler(ctx) {
-                return 'test';
-            }
-        },
-
-        test: {
-            async handler(ctx) {
-                return this.actions.register({
-                    name: 'test',
-                    schedule: '*/1 * * * *',
-                    action: 'v1.utils.cron.testAction',
-                    params: {}
-                })
-            }
-        },
-
-
-
-        /**
          * get cron job
          * 
          * @actions
@@ -341,6 +319,42 @@ module.exports = {
         processServiceCronConfigs: {
             async handler(ctx) {
                 return this.processServiceCronConfigs(ctx);
+            }
+        },
+
+        /**
+         * clean up cron jobs
+         * 
+         * @actions
+         * 
+         * @returns {Object} Cron job object
+         */
+        cleanup: {
+            async handler(ctx) {
+                // get all cron jobs
+                let cronJobs = await this.findEntities(null, {
+                    
+                });
+
+                const promises = [];
+
+                // loop through cron jobs
+                for (let cronJob of cronJobs) {
+                    // update cron job
+                    promises.push(this.removeEntity(ctx, {
+                        id: cronJob.id,
+                    }));
+                }
+
+                // wait for all promises to resolve
+                await Promise.allSettled(promises);
+
+                if (cronJobs.length > 0) {
+                    this.logger.info(`Cron jobs cleaned up: ${cronJobs.length}`);
+                }
+
+                // return cron job
+                return cronJobs;
             }
         },
     },
